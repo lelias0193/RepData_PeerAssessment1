@@ -5,15 +5,17 @@ output: html_document
 
 #Introduction
 
-##It is now possible to collect a large amount of data about personal movement using activity monitoring devices such as a Fitbit, Nike Fuelband, or Jawbone Up. These type of devices are part of the “quantified self” movement – a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. But these data remain under-utilized both because the raw data are hard to obtain and there is a lack of statistical methods and software for processing and interpreting the data.  This assignment makes use of data from a personal activity monitoring device. This device collects data at 5 minute intervals through out the day. The data consists of two months of data from an anonymous individual collected during the months of October and November, 2012 and include the number of steps taken in 5 minute intervals each day.
+###It is now possible to collect a large amount of data about personal movement using activity monitoring devices such as a Fitbit, Nike Fuelband, or Jawbone Up. These type of devices are part of the “quantified self” movement – a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. But these data remain under-utilized both because the raw data are hard to obtain and there is a lack of statistical methods and software for processing and interpreting the data.
 
-#Loading and preprocessing the data
+###This assignment makes use of data from a personal activity monitoring device. This device collects data at 5 minute intervals through out the day. The data consists of two months of data from an anonymous individual collected during the months of October and November, 2012 and include the number of steps taken in 5 minute intervals each day.
+
+##Loading and preprocessing the data
 ```{r}
 amd <- read.csv("activity.csv", stringsAsFactors = FALSE)
 ```
 
 
-#What is mean total number of steps taken per day?
+##What is mean total number of steps taken per day?
 ```{r}
 install.packages("dplyr")
 library(dplyr)
@@ -32,7 +34,7 @@ linetype = "dashed", size = 1) + geom_vline(xintercept = total.median, color = "
 linetype = "dashed", size = 1) + labs(title = "Histogram of total steps \n taken for each day") + labs(x = "", y = "")
 ```
 
-#What is the average daily activity pattern?
+##What is the average daily activity pattern?
 ```{r}
 avg.intvl.steps <- amd %.% group_by(interval) %.% summarise(avg.intvl = mean(steps, 
                                                                              na.rm = T))
@@ -42,14 +44,14 @@ qplot(interval, avg.intvl, data = avg.intvl.steps) + geom_line() + geom_vline(xi
                                                                               color = "red", linetype = "dashed", size = 1) + labs(title = "Time series of the 5-minute interval and the average number of steps taken, \n averaged across all days") + labs(x = "5-minute interval signature", y = "number of steps ")
 ```
 
-#Imputing missing values
+##Imputing missing values
 
-##Total number of missing values in the dataset
+###Total number of missing values in the dataset
 ```{r}
 na.rows.num <- nrow(amd) - sum(complete.cases(amd))
 ```
 
-##A strategy for filling in all of the missing values in the dataset
+###A strategy for filling in all of the missing values in the dataset
 ```{r}
 amd.na.imputed <- amd
 
@@ -66,7 +68,7 @@ for (row.num in 1:nrow(amd.na.imputed)) {
 (nrow(amd.na.imputed) - sum(complete.cases(amd.na.imputed))) == 0
 ```
 
-##Dataset with imputed NA values - histogram of the total number of steps taken each day
+###Dataset with imputed NA values - histogram of the total number of steps taken each day
 ```{r}
 total.steps.per.day.imputed <- amd.na.imputed %.% group_by(date) %.% summarise(total = sum(steps, 
                                                                                            na.rm = T))
@@ -84,7 +86,7 @@ ggplot(total.steps.per.day.imputed, aes(x = total)) + geom_histogram(fill = "yel
   labs(x = "", y = "")
 ```
 
-#Are there differences in activity patterns between weekdays and weekends?
+##Are there differences in activity patterns between weekdays and weekends?
 ```{r}
 weekdays.sgn <- weekdays(as.Date(amd.na.imputed$date))
 amd.na.imputed$day.type <- sapply(weekdays.sgn, function(sgn) {
