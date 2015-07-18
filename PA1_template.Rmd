@@ -1,25 +1,106 @@
 ---
-title: "Reproducible Research: Peer Assessment 1"
-output: 
-  html_document:
-    keep_md: true
+title: "PA1_template.rmd"
+output: html_document
 ---
 
+#Introduction
 
-## Loading and preprocessing the data
+##It is now possible to collect a large amount of data about personal movement using activity monitoring devices such as a Fitbit, Nike Fuelband, or Jawbone Up. These type of devices are part of the “quantified self” movement – a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. But these data remain under-utilized both because the raw data are hard to obtain and there is a lack of statistical methods and software for processing and interpreting the data.  This assignment makes use of data from a personal activity monitoring device. This device collects data at 5 minute intervals through out the day. The data consists of two months of data from an anonymous individual collected during the months of October and November, 2012 and include the number of steps taken in 5 minute intervals each day.
 
-
-
-## What is mean total number of steps taken per day?
-
-
-
-## What is the average daily activity pattern?
+#Loading and preprocessing the data
+```{r}
+amd <- read.csv("activity.csv", stringsAsFactors = FALSE)
+```
 
 
+#What is mean total number of steps taken per day?
+```{r}
+install.packages("dplyr")
+library(dplyr)
+total.steps <- amd %.% group_by(date) %.% summarise(total = sum(steps, na.rm = T))
+total.mean <- mean(total.steps$total)
+print(total.mean)
+total.median <- median(total.steps$total)
+print(total.median)
 
-## Imputing missing values
+install.packages("ggplot2")
+library(ggplot2)
+theme_set(theme_bw(base_size = 14))
+ggplot(total.steps, aes(x = total)) + geom_histogram(fill = "yellow", 
+colour = "black") + geom_vline(xintercept = total.mean, color = "brown", 
+linetype = "dashed", size = 1) + geom_vline(xintercept = total.median, color = "red", 
+linetype = "dashed", size = 1) + labs(title = "Histogram of total steps \n taken for each day") + labs(x = "", y = "")
+```
+
+#What is the average daily activity pattern?
+```{r}
+avg.intvl.steps <- amd %.% group_by(interval) %.% summarise(avg.intvl = mean(steps, 
+                                                                             na.rm = T))
+max.num.of.steps.interv.ind <- which(avg.intvl.steps$avg.intvl == max(avg.intvl.steps$avg.intvl))
+max.num.of.steps.interv <- avg.intvl.steps[max.num.of.steps.interv.ind, 1]
+qplot(interval, avg.intvl, data = avg.intvl.steps) + geom_line() + geom_vline(xintercept = max.num.of.steps.interv, 
+                                                                              color = "red", linetype = "dashed", size = 1) + labs(title = "Time series of the 5-minute interval and the average number of steps taken, \n averaged across all days") + labs(x = "5-minute interval signature", y = "number of steps ")
+```
+
+#Imputing missing values
+
+##Total number of missing values in the dataset
+```{r}
+na.rows.num <- nrow(amd) - sum(complete.cases(amd))
+```
+
+##A strategy for filling in all of the missing values in the dataset
+```{r}
+amd.na.imputed <- amd
+
+for (row.num in 1:nrow(amd.na.imputed)) {
+  if (is.na(amd.na.imputed[row.num, "steps"])) {
+    interval.sgn <- amd.na.imputed[row.num, "interval"]
+    interval.sgn.ind <- which(avg.intvl.steps[, "interval"] == interval.sgn)
+    interval.steps.mean <- avg.intvl.steps[interval.sgn.ind, "avg.intvl"]
+    amd.na.imputed[row.num, "steps"] <- interval.steps.mean
+    message(paste0("NA value in row num. ", row.num, " imputed!"))
+  }
+}
+
+(nrow(amd.na.imputed) - sum(complete.cases(amd.na.imputed))) == 0
+```
+
+##Dataset with imputed NA values - histogram of the total number of steps taken each day
+```{r}
+total.steps.per.day.imputed <- amd.na.imputed %.% group_by(date) %.% summarise(total = sum(steps, 
+                                                                                           na.rm = T))
+
+total.mean.imputed <- mean(total.steps.per.day.imputed$total)
+print(total.mean.imputed)
+
+total.median.imputed <- median(total.steps.per.day.imputed$total)
+print(total.median.imputed)
+
+ggplot(total.steps.per.day.imputed, aes(x = total)) + geom_histogram(fill = "yellow", 
+                                                                     colour = "black") + geom_vline(xintercept = total.mean.imputed, color = "brown", 
+                                                                                                    linetype = "dashed", size = 1) + geom_vline(xintercept = total.median.imputed, 
+                                                                                                                                                color = "red", linetype = "dashed", size = 1) + labs(title = "Histogram of total number of steps taken for each day \n in the data set with imputed NA values") + 
+  labs(x = "", y = "")
+```
+
+#Are there differences in activity patterns between weekdays and weekends?
+```{r}
+weekdays.sgn <- weekdays(as.Date(amd.na.imputed$date))
+amd.na.imputed$day.type <- sapply(weekdays.sgn, function(sgn) {
+  if (sgn %in% c("토요일", "일요일")) {
+    return("weekend")
+  } else {
+    return("weekday")
+  }
+})
 
 
 
-## Are there differences in activity patterns between weekdays and weekends?
+day.type.interv.steps <- amd.na.imputed %.% group_by(interval, day.type) %.% 
+  summarise(avg.steps = mean(steps))
+
+library(lattice)
+xyplot(avg.steps ~ interval | day.type, data = day.type.interv.steps, type = "b", 
+       layout = c(1, 2))
+```
